@@ -3,9 +3,21 @@ import UIKit
 import enum Result.NoError
 
 extension Reactive where Base: UITextView {
+	internal func makeControlBindable<U>(setValue: @escaping (Base, U) -> Void, values: @escaping (Reactive<Base>) -> Signal<U, NoError>) -> ControlBindable<U> {
+		return ControlBindable(control: base,
+		                       setEnabled: { $0.isEditable = $1 },
+		                       setValue: setValue,
+		                       values: { values(($0 as! Base).reactive) })
+	}
+
 	/// Sets the text of the text view.
-	public var text: BindingTarget<String?> {
-		return makeBindingTarget { $0.text = $1 }
+	public var text: ControlBindable<String?> {
+		return makeControlBindable(setValue: { $0.text = $1 }, values: { $0.textValues })
+	}
+
+	/// Sets the text of the text view.
+	public var continuousText: ControlBindable<String?> {
+		return makeControlBindable(setValue: { $0.text = $1 }, values: { $0.continuousTextValues })
 	}
 
 	private func textValues(forName name: NSNotification.Name) -> Signal<String?, NoError> {
@@ -30,10 +42,15 @@ extension Reactive where Base: UITextView {
 	public var continuousTextValues: Signal<String?, NoError> {
 		return textValues(forName: .UITextViewTextDidChange)
 	}
-	
+
 	/// Sets the attributed text of the text view.
-	public var attributedText: BindingTarget<NSAttributedString?> {
-		return makeBindingTarget { $0.attributedText = $1 }
+	public var attributedText: ControlBindable<NSAttributedString?> {
+		return makeControlBindable(setValue: { $0.attributedText = $1 }, values: { $0.attributedTextValues })
+	}
+
+	/// Sets the attributed text of the text view.
+	public var continuousAttributedText: ControlBindable<NSAttributedString?> {
+		return makeControlBindable(setValue: { $0.attributedText = $1 }, values: { $0.continuousAttributedTextValues })
 	}
 	
 	private func attributedTextValues(forName name: NSNotification.Name) -> Signal<NSAttributedString?, NoError> {
